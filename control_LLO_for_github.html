@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Контроль льготного лекарственного обеспечения</title>
+    <!-- 
+        ╔══════════════════════════════════════════════════════════════╗
+        ║                    АВТОРСКОЕ ПРАВО                            ║
+        ╠══════════════════════════════════════════════════════════════╣
+        ║  Разработчик: [Белова В.П.]                                     ║
+        ║  Дата создания: 2026                                         ║
+        ║  Уникальный идентификатор: LLO-2026-04-05-001               ║
+        ║  Лицензия: только для ГБУЗ "Городская больница №40" Поликлиника №68                    ║
+        ║  Запрещено копирование, распространение или использование    ║
+        ║  в других медицинских учреждениях без письменного разрешения ║
+        ╚══════════════════════════════════════════════════════════════╝
+    -->
+    <style>
+        * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
+        body { background: #f5f7fb; margin: 0; padding: 20px; }
+        .container { max-width: 1600px; margin: 0 auto; background: white; border-radius: 24px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow-x: auto; }
+        h1 { color: #2c3e50; margin-top: 0; font-size: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .toolbar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; margin: 20px 0; align-items: center; }
+        select, button, input { padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; border: none; cursor: pointer; }
+        select, input { background: #f8f9fc; border: 1px solid #e2e8f0; cursor: text; }
+        button { background: #6c8fb3; color: white; transition: 0.2s; }
+        button:hover { background: #5a7d9e; }
+        .btn-excel { background: #b48c5c; }
+        .btn-excel:hover { background: #9e754a; }
+        .btn-add { background: #6f9e7c; }
+        .btn-add:hover { background: #5c8468; }
+        .stats { background: #f8fafc; padding: 10px 20px; border-radius: 16px; margin: 15px 0; font-size: 0.85rem; border-left: 4px solid #99b8d4; }
+        .filter-buttons { display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap; align-items: center; }
+        .filter-btn, .status-filter-btn { background: #eef2f7; color: #2c3e50; padding: 6px 14px; border-radius: 30px; border: none; transition: 0.2s; font-weight: 500; }
+        .filter-btn.active, .status-filter-btn.active { background: #b8d0e5; color: #1e2f3e; box-shadow: inset 0 1px 1px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05); }
+        .search-input { flex: 1; min-width: 200px; }
+        .pagination { display: flex; gap: 8px; margin: 20px 0 10px; flex-wrap: wrap; align-items: center; justify-content: center; }
+        .page-btn { background: #eef2f7; color: #2c3e50; padding: 5px 12px; border-radius: 20px; }
+        .page-btn.active-page { background: #b8d0e5; color: #1e2f3e; }
+        .page-size-select { width: 70px; text-align: center; }
+        .nav-btn { background: #99b8d4; color: #1e2f3e; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 1300px; }
+        th { background: #e2e8f0; color: #1e2f3e; padding: 10px 6px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+        td { padding: 8px 6px; border-bottom: 1px solid #edf2f7; vertical-align: middle; font-size: 0.85rem; }
+        tr:hover td { background: #fafcff; }
+        
+        .phone-cell { white-space: nowrap; font-family: monospace; font-size: 0.8rem; }
+        .snils-cell { white-space: nowrap; font-family: monospace; font-size: 0.8rem; }
+        .comment-cell { max-width: 200px; white-space: normal; word-break: break-word; color: #7b8a9b; font-style: italic; font-size: 0.75rem; }
+        
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 4px 8px; margin: 0 2px; border-radius: 16px; transition: 0.2s; }
+        .edit-btn { color: #b48c5c; background: #fdf8f2; }
+        .edit-btn:hover { background: #eaddc3; color: #8b5e2e; }
+        .delete-btn { color: #c9a0a0; background: #fdf5f5; }
+        .delete-btn:hover { background: #f3e0e0; color: #a55; }
+        
+        /* СТАТУСЫ — яркие, но не кислотные, с хорошей различимостью */
+        .status-no-rx { background: #dbeafe; color: #1e3a8a; display: inline-block; padding: 5px 14px; border-radius: 24px; font-size: 0.75rem; font-weight: 600; }
+        .status-overdue { background: #fee2e2; color: #991b1b; display: inline-block; padding: 5px 14px; border-radius: 24px; font-size: 0.75rem; font-weight: 700; border-left: 3px solid #dc2626; }
+        .status-soon { background: #ffedd5; color: #9a3412; display: inline-block; padding: 5px 14px; border-radius: 24px; font-size: 0.75rem; font-weight: 700; border-left: 3px solid #f97316; }
+        .status-ok { background: #dcfce7; color: #166534; display: inline-block; padding: 5px 14px; border-radius: 24px; font-size: 0.75rem; font-weight: 600; }
+        .status-expired { background: #f3f4f6; color: #6b7280; display: inline-block; padding: 5px 12px; border-radius: 24px; font-size: 0.7rem; text-decoration: line-through; font-weight: 500; }
+        
+        /* Цветные кнопки льгот (без эмодзи) */
+        .filter-btn.benefit-777 { background: #e9d5ff; color: #5b21b6; }
+        .filter-btn.benefit-777.active { background: #d8b4fe; color: #4c1d95; }
+        .filter-btn.benefit-775 { background: #cffafe; color: #155e75; }
+        .filter-btn.benefit-775.active { background: #bae6fd; color: #0e7490; }
+        .filter-btn.benefit-778 { background: #d1fae5; color: #166534; }
+        .filter-btn.benefit-778.active { background: #a7f3d0; color: #14532d; }
+        
+        .disabled-row { opacity: 0.5; background: #fafcff; }
+        .server-time-info { font-size: 0.7rem; color: #6c8fb3; background: #ecf3f9; padding: 5px 12px; border-radius: 20px; }
+        .copyright { font-size: 0.6rem; color: #bdc7d4; text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid #eef2f7; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 20px; border-radius: 24px; width: 600px; max-width: 95%; max-height: 85%; overflow-y: auto; }
+        .modal-content input, .modal-content select { width: 100%; margin: 8px 0 16px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 20px; }
+        .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; }
+        .admin-panel { margin-top: 30px; border-top: 1px solid #eef2f7; padding-top: 20px; }
+        .hidden { display: none; }
+        .tab { padding: 8px 20px; cursor: pointer; background: none; border: none; font-size: 0.9rem; color: #7b8a9b; }
+        .tab.active { border-bottom: 3px solid #99b8d4; color: #2c3e50; font-weight: 500; }
+        .warning { background: #fef5e8; color: #b48c5c; padding: 5px 10px; border-radius: 12px; font-size: 0.7rem; }
+        .doctor-badge { background: #b8d0e5; color: #1e2f3e; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; margin-left: 10px; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.phone-badge {
+    background: #f0f2f5;
+    color: #1e2f3e;
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 24px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    font-weight: 500;
+    white-space: nowrap;
+    border: 1px solid #e2e8f0;
+}
+
+/* ===== ТЁМНАЯ ТЕМА (исправленная, без жёлтого) ===== */
+body.dark-theme {
+    background: #1a202c;
+    color: #f7fafc;
+}
+
+body.dark-theme .container {
+    background: #2d3748;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+body.dark-theme h1,
+body.dark-theme .stats,
+body.dark-theme .stats span,
+body.dark-theme .stats div {
+    color: #f7fafc;
+}
+
+body.dark-theme .stats .stats-icon {
+    color: inherit; /* чтобы значки не меняли цвет принудительно */
+}
+body.dark-theme .stats span:not(.stats-icon) {
+    color: #fbbf24; /* жёлтый для цифр */
+    font-weight: 600;
+}
+body.dark-theme .filter-buttons span,
+body.dark-theme .server-time-info {
+    color: #f7fafc;
+}
+
+body.dark-theme select,
+body.dark-theme input,
+body.dark-theme .filter-btn,
+body.dark-theme .status-filter-btn,
+body.dark-theme .page-btn {
+    background: #2d3748;
+    color: #f7fafc;
+    border: 1px solid #4a5568;
+}
+
+/* ВЫПАДАЮЩИЕ СПИСКИ (ВРАЧ, АДМИН) — мягкий аквамарин */
+body.dark-theme #doctorSelect,
+body.dark-theme #editDoctorId,
+body.dark-theme .admin-panel select {
+    background: #1e2a3a;
+    color: #80deea;
+    font-weight: 500;
+    border: 1px solid #4db6ac;
+}
+
+/* Плашка врача (участок) — мягкий бирюзовый */
+body.dark-theme .doctor-badge {
+    background: #4db6ac;
+    color: #1e2a3a;
+    font-weight: 600;
+}
+
+/* Вкладки */
+body.dark-theme .tab {
+    color: #cbd5e0;
+}
+
+body.dark-theme .tab.active {
+    color: #80deea;
+    border-bottom-color: #4db6ac;
+}
+
+/* Фильтры, пагинация */
+body.dark-theme .filter-btn.active,
+body.dark-theme .status-filter-btn.active {
+    background: #2b6cb0;
+    color: white;
+}
+
+/* ТАБЛИЦА */
+body.dark-theme th {
+    background: #4a5568;
+    color: #f7fafc;
+}
+
+body.dark-theme td {
+    border-bottom-color: #4a5568;
+    color: #f7fafc;
+}
+
+body.dark-theme tr:hover td {
+    background: #4a5568;
+}
+
+/* Кнопки действий */
+body.dark-theme .action-btn {
+    color: #f7fafc;
+}
+
+body.dark-theme .edit-btn {
+    color: #f7fafc;
+    background: #2b6cb0;
+}
+
+body.dark-theme .delete-btn {
+    color: #f7fafc;
+    background: #c53030;
+}
+
+/* Статусы в тёмной теме */
+body.dark-theme .status-no-rx {
+    background: #2c5282;
+    color: #bee3f8;
+}
+
+body.dark-theme .status-overdue {
+    background: #742a2a;
+    color: #fed7d7;
+    border-left-color: #fc8181;
+}
+
+body.dark-theme .status-soon {
+    background: #7b341e;
+    color: #feebc8;
+    border-left-color: #fbbf24;
+}
+
+body.dark-theme .status-ok {
+    background: #22543d;
+    color: #c6f6d5;
+    border-left-color: #48bb78;
+}
+
+body.dark-theme .status-expired {
+    background: #4a5568;
+    color: #cbd5e0;
+}
+
+/* Пагинация, бейджи, футер */
+body.dark-theme .page-btn.nav-btn {
+    background: #2b6cb0;
+    color: white;
+}
+
+body.dark-theme .copyright {
+    color: #a0aec0;
+    border-top-color: #4a5568;
+}
+body.dark-theme .phone-badge {
+    background: #4a5568;
+    color: #f7fafc;
+    border-color: #718096;
+}
+body.dark-theme .server-time-info {
+    background: #4a5568;
+    color: #80deea;
+    font-weight: 500;
+    border: 1px solid #80deea;
+}
+/* ЯВНО делаем текст статистики светлым */
+body.dark-theme #statsPanel,
+body.dark-theme #statsPanel span,
+body.dark-theme #statsPanel div {
+    color: #f7fafc !important;
+}
+body.dark-theme #statsPanel span:last-child {
+    color: #fbbf24 !important;
+}
+/* ПРИНУДИТЕЛЬНЫЕ СТИЛИ ДЛЯ СТАТИСТИКИ — СВЕТЛАЯ ТЕМА */
+#statsPanel,
+#statsPanel span,
+#statsPanel div {
+    color: #1e2f3e !important;
+}
+
+/* ТЁМНАЯ ТЕМА ДЛЯ СТАТИСТИКИ */
+body.dark-theme .stats {
+    background: #2d3748;
+    border-left-color: #4db6ac;
+}
+body.dark-theme #statsPanel,
+body.dark-theme #statsPanel span,
+body.dark-theme #statsPanel div {
+    color: #f7fafc !important;
+}
+
+/* ЦИФРЫ ДЕЛАЕМ НАМНОГО ЯРЧЕ (ДЛЯ ОБОИХ ТЕМ) */
+#statsPanel span:last-child,
+body.dark-theme #statsPanel span:last-child {
+    color: #fbbf24 !important;
+    font-weight: 700;
+}
+/* ТЁМНАЯ ТЕМА ДЛЯ МОДАЛЬНЫХ ОКОН */
+body.dark-theme .modal-content {
+    background: #2d3748;
+    color: #f7fafc;
+}
+body.dark-theme .modal-content input,
+body.dark-theme .modal-content select,
+body.dark-theme .modal-content textarea {
+    background: #4a5568;
+    color: #f7fafc;
+    border-color: #718096;
+}
+body.dark-theme .modal-content label {
+    color: #f7fafc;
+}
+body.dark-theme .modal-content button {
+    background: #2b6cb0;
+    color: white;
+}
+body.dark-theme #setTodayBtn {
+    background: #4db6ac;
+    color: #1e2a3a;
+}
+body.dark-theme #medicationsList div {
+    background: #4a5568;
+    color: #f7fafc;
+}
+body.dark-theme #medicationsList {
+    color: #f7fafc;
+}
+/* Логи в темной теме */
+
+        body.dark-theme #viewLogsBtn {
+            background: #4db6ac;
+            color: #1e2a3a;
+        }
+
+        body.dark-theme #logsContent {
+            background: #2d3748;
+            color: #f7fafc;
+            border-color: #4a5568;
+        }
+/* Подсветка при наведении на лекарство */
+.edit-medication:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    padding: 2px 6px;
+    margin: -2px -6px;
+}
+
+/* Для тёмной темы */
+body.dark-theme .edit-medication:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+/* ПРИНУДИТЕЛЬНЫЙ СТИЛЬ ДЛЯ ЛЕКАРСТВ В ТЁМНОЙ ТЕМЕ */
+body.dark-theme #medicationsList,
+body.dark-theme #medicationsList div,
+body.dark-theme .edit-medication,
+body.dark-theme .edit-medication span {
+    color: #f7fafc !important;
+}
+
+body.dark-theme #medicationsList div {
+    background: #4a5568 !important;
+}
+
+body.dark-theme .edit-medication:hover {
+    background: #6b8cae !important;
+}
+    </style>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h1>💊 Контроль льготного лекарственного обеспечения <span id="serverTimeInfo" class="server-time-info"></span></h1>
+   
+     <span id="ruleHint" style="
+        font-size: 0.75rem; 
+        font-weight: 500; 
+        background: #eef2fa; 
+        color: #2c3e50; 
+        padding: 4px 12px; 
+        border-radius: 30px; 
+        margin-left: 15px;
+        display: inline-block;
+        white-space: nowrap;
+    ">
+        📅 следующая выписка = последняя + 90 дней
+    </span>
+</h1>
+    <div class="toolbar">
+        <div>
+            <span>👨‍⚕️ Врач: </span>
+            <select id="doctorSelect"><option value="">-- Выберите --</option></select>
+            <span id="doctorBadge" class="doctor-badge"></span>
+        </div>
+        <div class="flex-between" style="gap: 10px;">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск по ФИО...">
+            <button id="exportBtn" class="btn-excel">📊 Отчёт</button>
+            <button id="addPatientBtn" class="btn-add">➕ Добавить пациента</button>
+            <button id="themeToggleBtn" style="background:#6c8fb3;">🌓 Тема</button>
+        </div>
+    </div>
+    
+    <!-- Фильтр по льготам (цветные кнопки) -->
+    <div class="filter-buttons" id="benefitFilter"></div>
+    
+    <!-- Фильтр по статусу -->
+    <div class="filter-buttons" id="statusFilter">
+        <span style="font-weight: 500;">📌 Статус:</span>
+        <button class="status-filter-btn active" data-status-filter="all">Все</button>
+        <button class="status-filter-btn" data-status-filter="urgent">⚠️ Просрочено + Скоро</button>
+        <button class="status-filter-btn" data-status-filter="ok">✅ В норме</button>
+        <button class="status-filter-btn" data-status-filter="no-rx">📭 Нет выписки</button>
+    </div>
+    
+
+    <!-- Фильтр по отделению -->
+	<div class="filter-buttons" id="departmentFilter">
+    		<span style="font-weight: 500;">🏥 Отделение:</span>
+    		<button class="dept-filter-btn active" data-dept="all">Все</button>
+    		<button class="dept-filter-btn" data-dept="1">Терапевтическое отделение № 1</button>
+    		<button class="dept-filter-btn" data-dept="2">Терапевтическое отделение № 2</button>
+	</div>
+
+    <div id="statsPanel" class="stats stats-panel"></div>
+    
+    <div style="overflow-x: auto;">
+        <table id="patientTable">
+            <thead id="tableHeader"></thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+    
+    <div class="pagination" id="paginationControls"></div>
+    
+    <div class="admin-panel">
+        <button class="tab active" onclick="showTab('work')">📋 Для врачей</button>
+        <button class="tab" onclick="promptPasswordAndShowAdmin()">⚙️ Админ</button>
+        <div id="adminWork" style="margin-top:15px;"><p style="color:#7f8c8d;">👆 Выберите врача из списка выше</p></div>
+        <div id="adminPanel" class="hidden" style="margin-top:15px;">
+            <h3>⚙️ Администрирование</h3>
+            <button id="refreshBtn" style="background:#2980b9; margin-bottom:15px;">🔄 Принудительно обновить данные</button>
+            <p><strong>📎 Загрузить Excel:</strong></p>
+<p style="font-size:0.7rem; color:#7f8c8d;">Программа сама найдёт колонки по названиям.</p>
+<input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+<label style="margin-left: 10px;">
+    <input type="checkbox" id="clearBeforeImport" checked> Очистить всех пациентов перед загрузкой
+</label>
+<button id="importBtn" style="margin-top: 10px;">Загрузить</button>
+<div id="importResult"></div>
+            
+            <p style="margin-top:20px;"><strong>💾 Загрузить JSON:</strong></p>
+            <button id="importJsonBtn" style="background:#8e44ad;">📂 Загрузить JSON</button>
+            <input type="file" id="jsonFile" accept=".json" style="display:none;">
+            
+	     <!-- Добавление кнопок логирования-->
+                <p><strong>📜 Логи действий:</strong></p>
+                <button id="exportLogsBtn" style="background:#2b6cb0;">📊 Выгрузить логи в Excel</button> 
+
+
+            <p><strong>💾 Резервная копия:</strong></p>
+            <button id="backupBtn">Создать копию</button>
+            
+            <p><strong>🔢 Список льгот (кнопки фильтра):</strong></p>
+            <div id="benefitsConfig">
+                <input type="text" id="newBenefitNumber" placeholder="Номер льготы" style="width:120px; display:inline-block;">
+                <button id="addBenefitBtn">➕ Добавить</button>
+                <div id="benefitsList" style="margin-top:10px;"></div>
+            </div>
+            
+            <p><strong>👨‍⚕️ Врачи:</strong></p>
+            <div id="doctorsList"></div>
+            <button id="addDoctorBtn">➕ Добавить врача</button>
+		<p><strong>🔄 Сменить врача у пациентов:</strong></p>
+		<select id="oldDoctorSelect"></select> → 
+		<select id="newDoctorSelect"></select>
+		<button id="reassignPatientsBtn">Перепривязать пациентов</button>
+        </div>
+    </div>
+    
+    <div class="copyright">
+        © [Белова В.П.], 2026. Разработано для ГБУЗ "Городская больница №40" Поликлиника №68. Уникальный ID: LLO-2026-04-05-001.<br>
+        Любое копирование, модификация или использование в других учреждениях запрещено.
+    </div>
+</div>
+
+<!-- Модальные окна -->
+<div id="editModal" class="modal"><div class="modal-content">
+    <h3 id="modalTitle">Пациент</h3>
+    <label>ФИО:</label><input type="text" id="editFio"><br>
+    <label>Дата рождения (ДД.ММ.ГГГГ):</label><input type="text" id="editBirthDate"><br>
+    <label>ИБ:</label><input type="text" id="editIb"><br>
+    <label>СНИЛС:</label><input type="text" id="editSnils"><br>
+    <label>Телефон:</label><input type="text" id="editPhone"><br>
+    <label>Диагноз:</label><input type="text" id="editDiagnosis"><br>
+    <label>№ льготы:</label><input type="text" id="editBenefitNumber"><br>
+    <label>Льгота с (ДД.ММ.ГГГГ):</label><input type="text" id="editBenefitFrom"><br>
+    <label>Льгота по (ДД.ММ.ГГГГ):</label><input type="text" id="editBenefitTo"><br>
+    
+    <!-- Поле с кнопкой "Сегодня" (одно) -->
+    <label>Последняя выписка (ДД.ММ.ГГГГ):</label>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="text" id="editLastRx" style="flex: 1;">
+        <button type="button" id="setTodayBtn" style="background: #2b6cb0; padding: 8px 12px;">📅 Сегодня</button>
+    </div>
+    
+    <label>Адрес:</label><input type="text" id="editAddress"><br>
+    <label>Комментарий:</label><input type="text" id="editComment"><br>
+    
+    <label>👨‍⚕️ Прикреплён к врачу:</label>
+    <select id="editDoctorId"></select>
+    
+<!-- Блок лекарств -->
+<hr style="margin: 15px 0;">
+<label>💊 Назначенные лекарства:</label>
+<div id="medicationsList" style="margin-bottom: 10px;"></div>
+<button type="button" id="addMedicationBtn" style="background: #6f9e7c; padding: 4px 12px; font-size: 0.8rem;">➕ Добавить лекарство</button>
+
+    <div class="modal-buttons"><button id="saveBtn">💾 Сохранить</button><button id="cancelBtn">Отмена</button></div>
+</div></div>
+
+<div id="editDoctorModal" class="modal"><div class="modal-content">
+    <h3>Редактировать врача</h3>
+    <label>ФИО:</label><input type="text" id="editDoctorName"><br>
+    <label>Участок:</label><input type="text" id="editDoctorDistrict"><br>
+<label>Отделение:</label>
+<select id="editDoctorDepartment">
+    <option value="1">Терапевтическое отделение № 1</option>
+    <option value="2">Терапевтическое отделение № 2</option>
+</select>
+    <input type="hidden" id="editDoctorId">
+    <div class="modal-buttons"><button id="saveDoctorEditBtn">💾 Сохранить</button><button id="cancelDoctorEditBtn">Отмена</button></div>
+</div></div>
+
+<div id="doctorModal" class="modal"><div class="modal-content">
+    <h3>Добавить врача</h3>
+    <label>ФИО:</label><input type="text" id="newDoctorName"><br>
+    <label>Участок:</label><input type="text" id="newDoctorDistrict"><br>
+<label>Отделение:</label>
+<select id="newDoctorDepartment">
+    <option value="1">Терапевтическое отделение № 1</option>
+    <option value="2">Терапевтическое отделение № 2</option>
+</select>
+    <div class="modal-buttons"><button id="saveDoctorBtn">💾 Сохранить</button><button id="cancelDoctorBtn">Отмена</button></div>
+</div></div>
+
+<script>
+    // ========== КОНФИГУРАЦИЯ ==========
+    const DATA_URL = 'save_data.php';
+    const TIME_URL = 'get_server_time.php';
+    const ADMIN_PASSWORD = "____";
+    const STORAGE_KEY = 'patients_data_local';
+    
+
+// 23.05.2026 Установка текущей даты в поле последней выписки
+function setTodayDate() {
+    let today = new Date();
+    let day = today.getDate().toString().padStart(2, '0');
+    let month = (today.getMonth() + 1).toString().padStart(2, '0');
+    let year = today.getFullYear();
+    let dateStr = `${day}.${month}.${year}`;
+    document.getElementById('editLastRx').value = dateStr;
+}
+
+// ========== ЛОГИРОВАНИЕ ==========
+async function addLog(action, details) {
+    let logEntry = {
+        timestamp: new Date().toISOString(),
+        doctor: currentDoctor ? currentDoctor.name : (currentDoctorAll ? 'Все врачи' : 'Админ'),
+        action: action,
+        details: details
+    };
+    try {
+        await fetch('save_log.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(logEntry)
+        });
+    } catch(e) {}
+}
+
+     // 23.05.2026 Добавление логирования
+        async function exportLogsToExcel() {
+    		try {
+        		let response = await fetch('actions.log?t=' + Date.now());
+        		if (!response.ok) {
+            			alert("Логи не доступны");
+            			return;
+        		}
+        
+        		let logsText = await response.text();
+        		let lines = logsText.split('\n').filter(line => line.trim() !== '');
+        
+        		// Преобразуем строки лога в массив для Excel
+        		let data = [["Дата", "Время", "Врач", "Действие", "Детали"]];
+        
+        		for (let line of lines) {
+            			// Формат лога: 2026-05-18 12:09:37 | Горнович Л.А. | Редактировать пациента | ФИО: ...
+            			let parts = line.split(' | ');
+           			 if (parts.length >= 4) {
+                			let dateTime = parts[0].split(' ');
+                			data.push([
+                    				dateTime[0],      // дата
+                    				dateTime[1] || '', // время
+                    				parts[1],          // врач
+                    				parts[2],          // действие
+                    				parts[3]           // детали
+               				 ]);
+            			}		
+        		}
+        
+        		// Создаём Excel-файл
+        		let ws = XLSX.utils.aoa_to_sheet(data);
+        		let wb = XLSX.utils.book_new();
+        		XLSX.utils.book_append_sheet(wb, ws, "Логи");
+        
+        		let now = new Date();
+        		let fileName = `логи_${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}_${now.getHours()}-${now.getMinutes()}.xlsx`;
+        		XLSX.writeFile(wb, fileName);
+        
+    } catch (e) {
+        alert("Ошибка при выгрузке логов: " + e.message);
+    }
+}
+
+
+    let SERVER_DATE = null;
+    let DOCTORS = [];
+    let PATIENTS = [];
+    let BENEFITS = ['777', '775', '778'];
+    let currentDoctor = null;
+    let currentDoctorAll = false;
+    let currentBenefitFilter = "all";
+    let currentStatusFilter = "all";
+    let currentDepartmentFilter = "all";
+    let currentPage = 1;
+    let pageSize = 20;
+    let searchQuery = "";
+    let currentEditId = null;
+    let isAdminMode = false;
+    
+    // ========== РАБОТА С ЛОКАЛЬНЫМ ХРАНИЛИЩЕМ ==========
+    function saveToLocalStorage() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ doctors: DOCTORS, patients: PATIENTS, benefits: BENEFITS }));
+    }
+    function loadFromLocalStorage() {
+        let data = localStorage.getItem(STORAGE_KEY);
+        if (!data) return false;
+        try {
+            let parsed = JSON.parse(data);
+            DOCTORS = parsed.doctors || [];
+            PATIENTS = parsed.patients || [];
+            BENEFITS = parsed.benefits || ['777', '775', '778'];
+            return true;
+        } catch(e) { return false; }
+    }
+    
+    window.promptPasswordAndShowAdmin = function() {
+        let pwd = prompt("Введите пароль администратора:");
+        if (pwd === ADMIN_PASSWORD) {
+            showTab('admin');
+            renderBenefitsList();
+        } else if (pwd !== null) alert("Неверный пароль!");
+    };
+    
+    async function loadServerDate() {
+        try {
+            let resp = await fetch(TIME_URL + '?t=' + Date.now());
+            if (resp.ok) {
+                let data = await resp.json();
+                SERVER_DATE = parseDate(data.serverDate);
+                document.getElementById('serverTimeInfo').innerHTML = `🕒 сервер: ${data.serverDate}`;
+            } else throw new Error();
+        } catch(e) {
+            SERVER_DATE = new Date();
+            document.getElementById('serverTimeInfo').innerHTML = `⚠️ локальное время`;
+        }
+    }
+    
+    async function loadData() {
+        await loadServerDate();
+        let loaded = false;
+        try {
+            let resp = await fetch('patients_data.json?t=' + Date.now());
+            if (resp.ok) {
+                let data = await resp.json();
+                if (data.doctors && data.patients) {
+                    DOCTORS = data.doctors;
+                    PATIENTS = data.patients;
+                    BENEFITS = data.benefits || ['777', '775', '778'];
+                    loaded = true;
+                    saveToLocalStorage();
+                }
+            }
+        } catch(e) {}
+        if (!loaded) loadFromLocalStorage();
+        if (!DOCTORS.length) setDefaultData();
+        
+        // Логирование входа
+        addLog('Вход в программу', 'Врач: ' + (currentDoctor ? currentDoctor.name : (currentDoctorAll ? 'Все врачи' : 'Не выбран')));
+        
+        renderBenefitButtons();
+        renderDoctorSelect();
+        renderDoctorSelectInModal();
+        renderTable();
+    }
+    
+    function setDefaultData() {
+        DOCTORS = [{ id: 1, name: "Иванова М.А.", district: "Участок №1" }];
+        PATIENTS = [];
+        BENEFITS = ['777', '775', '778'];
+        saveData();
+    }
+    
+    async function saveData() {
+        saveToLocalStorage();
+        try {
+            await fetch(DATA_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ doctors: DOCTORS, patients: PATIENTS, benefits: BENEFITS }) });
+        } catch(e) {}
+    }
+    
+    function parseDate(str) {
+        if (!str) return null;
+        let parts = str.split('.');
+        if (parts.length !== 3) return null;
+        let d = parseInt(parts[0]), m = parseInt(parts[1])-1, y = parseInt(parts[2]);
+        return isNaN(d) || isNaN(m) || isNaN(y) ? null : new Date(y, m, d);
+    }
+    
+    function formatDate(date) {
+        if (!date || isNaN(date.getTime())) return "—";
+        let d = date.getDate(), m = date.getMonth()+1, y = date.getFullYear();
+        return (d<10?'0'+d:d)+'.'+(m<10?'0'+m:m)+'.'+y;
+    }
+    
+    function getBenefitStatus(benefitTo) {
+        if (!benefitTo) return { active: true };
+        let toDate = parseDate(benefitTo);
+        if (!toDate) return { active: true };
+        let today = SERVER_DATE || new Date();
+        today.setHours(0,0,0,0);
+        return { active: toDate >= today };
+    }
+    
+    function getNextDate(lastRx) {
+        if (!lastRx) return null;
+        let last = parseDate(lastRx);
+        if (!last) return null;
+        let next = new Date(last);
+        next.setDate(next.getDate() + 90);
+        return next;
+    }
+    
+    function getStatus(lastRx, benefitTo) {
+        let benefit = getBenefitStatus(benefitTo);
+        if (!benefit.active) return { text: "Льгота закончена", class: "status-expired", priority: 5, group: "expired", editable: false };
+        if (!lastRx) return { text: "Нет выписки", class: "status-no-rx", priority: 1, group: "no-rx", editable: true };
+        let next = getNextDate(lastRx);
+        if (!next) return { text: "Ошибка даты", class: "status-overdue", priority: 2, group: "urgent", editable: true };
+        let today = SERVER_DATE || new Date();
+        today.setHours(0,0,0,0);
+        let diff = Math.ceil((next - today) / (1000*3600*24));
+        if (diff < 0) return { text: "Просрочено (" + Math.abs(diff) + " дн)", class: "status-overdue", priority: 2, group: "urgent", editable: true };
+        if (diff <= 14) return { text: "Скоро (" + diff + " дн)", class: "status-soon", priority: 3, group: "urgent", editable: true };
+        return { text: "В норме (" + diff + " дн)", class: "status-ok", priority: 4, group: "ok", editable: true };
+    }
+    
+    function renderBenefitButtons() {
+        let container = document.getElementById('benefitFilter');
+        let html = `<button class="filter-btn active" data-benefit="all">📋 Все льготы</button>`;
+        BENEFITS.forEach(b => {
+            let className = '';
+            if (b === '777') className = 'benefit-777';
+            else if (b === '775') className = 'benefit-775';
+            else if (b === '778') className = 'benefit-778';
+            html += `<button class="filter-btn ${className}" data-benefit="${b}">${b}</button>`;
+        });
+        container.innerHTML = html;
+        document.querySelectorAll('#benefitFilter .filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#benefitFilter .filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentBenefitFilter = btn.dataset.benefit;
+                currentPage = 1;
+                renderTable();
+            });
+        });
+    }
+    
+    function renderBenefitsList() {
+        let html = '<table style="width:100%"><tr><th>Номер льготы</th><th></th></tr>';
+        BENEFITS.forEach(b => {
+            html += `<tr><td>${b}</td><td><button onclick="removeBenefit('${b}')">Удалить</button></td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('benefitsList').innerHTML = html;
+    }
+    
+    window.removeBenefit = function(b) {
+        if (confirm(`Удалить льготу ${b}?`)) {
+            BENEFITS = BENEFITS.filter(v => v !== b);
+            saveData();
+            renderBenefitButtons();
+            renderBenefitsList();
+            if (currentBenefitFilter === b) { currentBenefitFilter = 'all'; renderTable(); }
+        }
+    };
+    
+    function addBenefit() {
+        let val = document.getElementById('newBenefitNumber').value.trim();
+        if (!val) { alert("Введите номер"); return; }
+        if (BENEFITS.includes(val)) { alert("Уже есть"); return; }
+        BENEFITS.push(val);
+        saveData();
+        renderBenefitButtons();
+        renderBenefitsList();
+        document.getElementById('newBenefitNumber').value = '';
+    }
+    
+    function renderDoctorSelect() {
+    	let select = document.getElementById('doctorSelect');
+    	let sorted = [...DOCTORS].sort((a, b) => a.name.localeCompare(b.name));
+    	select.innerHTML = '<option value="">-- Выберите --</option><option value="all">👥 Все врачи</option>';
+    	sorted.forEach(d => {
+        	select.appendChild(new Option(d.district ? `${d.name} (${d.district})` : d.name, d.id));
+    	});
+    	let saved = localStorage.getItem('selectedDoctor');
+    	if (saved === 'all') { select.value = 'all'; currentDoctorAll = true; currentDoctor = null; }
+    	else if (saved && DOCTORS.find(d => d.id == saved)) { select.value = saved; currentDoctor = DOCTORS.find(d => d.id == saved); currentDoctorAll = false; }
+	}
+    
+    function renderDoctorSelectInModal() {
+        let select = document.getElementById('editDoctorId');
+        select.innerHTML = '<option value="">-- Выберите врача --</option>';
+        DOCTORS.forEach(d => {
+            select.appendChild(new Option(d.district ? `${d.name} (${d.district})` : d.name, d.id));
+        });
+    }
+    
+    function findDoctorByName(name) {
+    if (!name) return null;
+    // Нормализуем: убираем лишние пробелы, точки, приводим к нижнему регистру
+    let normalize = (str) => {
+        return str.trim()
+                  .toLowerCase()
+                  .replace(/\./g, '')
+                  .replace(/\s+/g, ' ')
+                  .replace(/[\(\)]/g, '');
+    };
+    let normalizedName = normalize(name);
+    return DOCTORS.find(d => normalize(d.name) === normalizedName);
+}
+    function getFilteredPatients() {
+    	let list = [];
+    	if (currentDoctorAll) {
+        	// Режим "Все врачи" — фильтруем по отделению
+        	list = PATIENTS.filter(p => {
+            		let doctor = DOCTORS.find(d => d.id === p.doctorId);
+           		 if (currentDepartmentFilter === 'all') return true;
+            		if (!doctor) return false;
+            		return doctor.department === parseInt(currentDepartmentFilter);
+        	});
+    	} else if (currentDoctor) {
+        	list = PATIENTS.filter(p => p.doctorId === currentDoctor.id);
+    	} else {
+        	list = [];
+    	}
+    
+    if (currentBenefitFilter !== 'all') list = list.filter(p => String(p.benefitNumber || '').trim() === currentBenefitFilter);
+    if (searchQuery.trim()) list = list.filter(p => p.fio && p.fio.toLowerCase().includes(searchQuery.trim().toLowerCase()));
+    
+    let withStatus = list.map(p => {
+        let s = getStatus(p.lastRx, p.benefitTo);
+        let doc = DOCTORS.find(d => d.id === p.doctorId);
+        return { ...p, _statusText: s.text, _statusPriority: s.priority, _statusClass: s.class, _statusGroup: s.group, _isExpired: !getBenefitStatus(p.benefitTo).active, _doctorName: doc ? (doc.district ? `${doc.name} (${doc.district})` : doc.name) : '—' };
+    });
+    
+    if (currentStatusFilter !== 'all') withStatus = withStatus.filter(p => p._statusGroup === currentStatusFilter);
+    withStatus.sort((a,b) => a._statusPriority - b._statusPriority);
+    return withStatus;
+}
+    
+    function renderTable() {
+        let filtered = getFilteredPatients();
+        let isAll = currentDoctorAll;
+        if ((!currentDoctor && !isAll) || filtered.length === 0) {
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="${isAll ? 15 : 14}" style="text-align:center;padding:40px;">👈 Выберите врача или нет данных</td></tr>`;
+            document.getElementById('statsPanel').innerHTML = '';
+            document.getElementById('doctorBadge').innerHTML = '';
+            renderTableHeader(isAll);
+            renderPagination(0,0);
+            return;
+        }
+        let stats = { total: filtered.length, noRx: filtered.filter(p => p._statusGroup === 'no-rx').length, urgent: filtered.filter(p => p._statusGroup === 'urgent').length, ok: filtered.filter(p => p._statusGroup === 'ok').length, expired: filtered.filter(p => p._statusGroup === 'expired').length };
+        document.getElementById('statsPanel').innerHTML = `👥 Всего: ${stats.total} | 📭 Нет выписки: ${stats.noRx} | ⚠️ Просрочено+Скоро: ${stats.urgent} | ✅ В норме: ${stats.ok} | ⚪ Льгота закончена: ${stats.expired}`;
+if (document.body.classList.contains('dark-theme')) {
+    document.getElementById('statsPanel').style.color = '#f7fafc';
+    let spans = document.querySelectorAll('#statsPanel span');
+    for (let s of spans) s.style.color = '#fbbf24';
+}
+        document.getElementById('doctorBadge').innerHTML = isAll ? 'Все врачи' : (currentDoctor?.district || '');
+        renderTableHeader(isAll);
+        let totalPages = Math.ceil(filtered.length / pageSize) || 1;
+        let start = (currentPage-1)*pageSize;
+        let pagePatients = filtered.slice(start, start+pageSize);
+        renderPagination(totalPages, filtered.length);
+        let html = '';
+        for (let p of pagePatients) {
+            let next = getNextDate(p.lastRx);
+            html += `<tr class="${p._isExpired ? 'disabled-row' : ''}">
+                <td>${p.fio || '—'}</td><td>${p.birthDate || '—'}</td><td>${p.ib || '—'}</td>
+                <td class="snils-cell">${p.snils || '—'}</td>
+		<td><span class="phone-badge">📞 ${p.phone || '—'}</span></td>
+                <td>${p.diagnosis || '—'}</td><td>${p.benefitNumber || '—'}</td><td>${p.benefitTo || '—'}</td>
+                <td><strong>${p.lastRx || '—'}</strong></td><td>${next ? formatDate(next) : '—'}</td>
+                <td><span class="${p._statusClass}">${p._statusText}</span></td><td>${p.address || '—'}</td>
+                <td class="comment-cell">${p.comment || '—'}</td>${isAll ? `<td>${p._doctorName}</td>` : ''}
+                <td>${p._isExpired ? `<button class="action-btn delete-btn" onclick="deletePatient(${p.id})">🗑️</button>` : `<button class="action-btn edit-btn" onclick="editPatient(${p.id})">✏️</button><button class="action-btn delete-btn" onclick="deletePatient(${p.id})">🗑️</button>`}</td>
+            </tr>`;
+        }
+        document.getElementById('tableBody').innerHTML = html;
+    }
+    
+    function renderTableHeader(showDoctor) {
+        document.getElementById('tableHeader').innerHTML = showDoctor ? 
+            `<tr><th>ФИО</th><th>Дата рожд.</th><th>ИБ</th><th>СНИЛС</th><th>Телефон</th><th>Диагноз</th><th>№ льготы</th><th>Льгота до</th><th>Последняя выписка</th><th>Следующая</th><th>Статус</th><th>Адрес</th><th>Комментарий</th><th>Врач (участок)</th><th>Действия</th></tr>` :
+            `<tr><th>ФИО</th><th>Дата рожд.</th><th>ИБ</th><th>СНИЛС</th><th>Телефон</th><th>Диагноз</th><th>№ льготы</th><th>Льгота до</th><th>Последняя выписка</th><th>Следующая</th><th>Статус</th><th>Адрес</th><th>Комментарий</th><th>Действия</th></tr>`;
+    }
+    
+    function renderPagination(total, totalItems) {
+        if (total <= 1 && totalItems <= pageSize) { document.getElementById('paginationControls').innerHTML = ''; return; }
+        let start = (currentPage-1)*pageSize+1;
+        let end = Math.min(currentPage*pageSize, totalItems);
+        let html = `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center">
+            <span>Показано: ${start}–${end} из ${totalItems}</span>
+            <select id="pageSizeSelect"><option value="10" ${pageSize===10?'selected':''}>10</option><option value="20" ${pageSize===20?'selected':''}>20</option><option value="50" ${pageSize===50?'selected':''}>50</option><option value="1000000" ${pageSize>1000?'selected':''}>Все</option></select><span>на странице</span>
+            <button class="page-btn nav-btn" id="firstPageBtn" ${currentPage===1?'disabled':''}>⏮ В начало</button>
+            <button class="page-btn nav-btn" id="prevPageBtn" ${currentPage===1?'disabled':''}>◀ Назад</button>
+            <span id="pageNumbers"></span>
+            <button class="page-btn nav-btn" id="nextPageBtn" ${currentPage===total?'disabled':''}>Вперед ▶</button>
+            <button class="page-btn nav-btn" id="lastPageBtn" ${currentPage===total?'disabled':''}>В конец ⏭</button>
+        </div>`;
+        document.getElementById('paginationControls').innerHTML = html;
+        let pagesHtml = '';
+        for (let i=Math.max(1,currentPage-2); i<=Math.min(total,currentPage+2); i++) pagesHtml += `<button class="page-btn ${i===currentPage?'active-page':''}" data-page="${i}">${i}</button>`;
+        document.getElementById('pageNumbers').innerHTML = pagesHtml;
+        document.querySelectorAll('[data-page]').forEach(btn => btn.addEventListener('click',()=>{currentPage=parseInt(btn.dataset.page);renderTable();}));
+        document.getElementById('firstPageBtn')?.addEventListener('click',()=>{currentPage=1;renderTable();});
+        document.getElementById('prevPageBtn')?.addEventListener('click',()=>{if(currentPage>1){currentPage--;renderTable();}});
+        document.getElementById('nextPageBtn')?.addEventListener('click',()=>{if(currentPage<total){currentPage++;renderTable();}});
+        document.getElementById('lastPageBtn')?.addEventListener('click',()=>{currentPage=total;renderTable();});
+        document.getElementById('pageSizeSelect')?.addEventListener('change',(e)=>{pageSize=parseInt(e.target.value);currentPage=1;renderTable();});
+    }
+    
+    window.editPatient = function(id) {
+    let p = PATIENTS.find(x => x.id === id);
+    if (!p) return;
+    if (!getBenefitStatus(p.benefitTo).active) { 
+        alert("Льгота закончена! Редактирование невозможно."); 
+        return; 
+    }
+    
+    currentEditId = id;
+
+	 // ========== ЛОГИРУЕМ ОТКРЫТИЕ РЕДАКТИРОВАНИЯ ==========
+            addLog('Открыл редактирование', 'Пациент: ' + (p.fio || 'Неизвестно'));
+    
+    // Заполняем все поля модального окна
+    document.getElementById('editFio').value = p.fio || '';
+    document.getElementById('editBirthDate').value = p.birthDate || '';
+    document.getElementById('editIb').value = p.ib || '';
+    document.getElementById('editSnils').value = p.snils || '';
+    document.getElementById('editPhone').value = p.phone || '';
+    document.getElementById('editDiagnosis').value = p.diagnosis || '';
+    document.getElementById('editBenefitNumber').value = p.benefitNumber || '';
+    document.getElementById('editBenefitFrom').value = p.benefitFrom || '';
+    document.getElementById('editBenefitTo').value = p.benefitTo || '';
+    document.getElementById('editLastRx').value = p.lastRx || '';
+    document.getElementById('editAddress').value = p.address || '';
+    document.getElementById('editComment').value = p.comment || '';
+    // Загрузка списка лекарств
+    currentMedications = p.medications ? [...p.medications] : [];
+    renderMedicationsList();
+    // Выбираем врача в выпадающем списке и блокируем его изменение
+    let docSelect = document.getElementById('editDoctorId');
+    if (docSelect) {
+        docSelect.value = p.doctorId || '';
+        docSelect.disabled = !isAdminMode;
+    }
+    
+    document.getElementById('editModal').style.display = 'flex';
+};
+    
+    // Обновлено: добавление в логи
+        window.deletePatient = function (id) {
+            // Находим пациента до удаления, чтобы сохранить его ФИО в лог
+            let patientToDelete = PATIENTS.find(p => p.id === id);
+            let patientFio = patientToDelete ? patientToDelete.fio : 'Неизвестно';
+
+            if (confirm("Удалить пациента?")) {
+                PATIENTS = PATIENTS.filter(p => p.id !== id);
+                addLog('Удалить пациента', 'ФИО: ' + patientFio + ' (ID: ' + id + ')');
+                saveData();
+                renderTable();
+            }
+        };
+    
+    function addPatient() {
+        if (!currentDoctor && !currentDoctorAll) { alert("Сначала выберите врача"); return; }
+        currentEditId = null;
+        ['editFio','editBirthDate','editIb','editSnils','editPhone','editDiagnosis','editBenefitNumber','editBenefitFrom','editBenefitTo','editLastRx','editAddress','editComment'].forEach(f => document.getElementById(f).value = '');
+        let sel = document.getElementById('editDoctorId');
+        sel.disabled = false;
+        if (!currentDoctorAll && currentDoctor) sel.value = currentDoctor.id;
+        else sel.value = '';
+        document.getElementById('editModal').style.display = 'flex';
+    }
+    
+     // Функция обновлена полностью с добавлением логирования
+
+        function savePatient() {
+            let fio = document.getElementById('editFio').value.trim();
+            if (!fio) { alert("Введите ФИО"); return; }
+            let doctorId = parseInt(document.getElementById('editDoctorId').value);
+            if (isNaN(doctorId)) { alert("Выберите врача"); return; }
+
+            // Диагностика (можно удалить после проверки)
+            //console.log('savePatient: currentEditId =', currentEditId);
+
+            let isNew = (currentEditId === null);
+            let doctorName = DOCTORS.find(d => d.id === doctorId)?.name || 'Неизвестный врач';
+
+            let patient = {
+                id: currentEditId || Date.now(),
+                fio: fio,
+                doctorId: doctorId,
+                birthDate: document.getElementById('editBirthDate').value.trim(),
+                ib: document.getElementById('editIb').value.trim(),
+                snils: document.getElementById('editSnils').value.trim(),
+                phone: document.getElementById('editPhone').value.trim(),
+                diagnosis: document.getElementById('editDiagnosis').value.trim(),
+                benefitNumber: document.getElementById('editBenefitNumber').value.trim(),
+                benefitFrom: document.getElementById('editBenefitFrom').value.trim(),
+                benefitTo: document.getElementById('editBenefitTo').value.trim(),
+                lastRx: document.getElementById('editLastRx').value.trim(),
+                address: document.getElementById('editAddress').value.trim(),
+                comment: document.getElementById('editComment').value.trim(),
+                medications: currentMedications  // <-- добавь эту строку
+            };
+
+            if (isNew) {
+                PATIENTS.push(patient);
+                addLog('Добавить пациента', 'ФИО: ' + fio + ', врач: ' + doctorName);
+            } else {
+                let idx = PATIENTS.findIndex(p => p.id === currentEditId);
+                if (idx !== -1) PATIENTS[idx] = patient;
+                addLog('Редактировать пациента', 'ФИО: ' + fio + ' (ID: ' + currentEditId + '), врач: ' + doctorName);
+            }
+
+            saveData();
+            document.getElementById('editModal').style.display = 'none';
+            renderTable();
+        }
+    function exportReport() {
+    let patientsToExport = getFilteredPatients();
+    if (patientsToExport.length === 0) {
+        alert("Нет данных для экспорта по текущим фильтрам");
+        return;
+    }
+
+    // Заголовки (на русском)
+    let headers = [
+        "ФИО", "Дата рождения", "ИБ", "СНИЛС", "Телефон",
+        "Диагноз", "№ льготы", "Льгота до", "Последняя выписка",
+        "Следующая выписка", "Статус", "Адрес", "Комментарий",
+        "Врач", "Участок"
+    ];
+
+    // Формируем строки для Excel
+    let rows = [];
+    for (let p of patientsToExport) {
+        let next = getNextDate(p.lastRx);
+        let status = getStatus(p.lastRx, p.benefitTo);
+        let doctor = DOCTORS.find(d => d.id === p.doctorId);
+        let doctorName = doctor ? doctor.name : 'Не указан';
+        let doctorDistrict = doctor && doctor.district ? doctor.district : '';
+
+        rows.push([
+            p.fio || '',
+            p.birthDate || '',
+            p.ib || '',
+            p.snils || '',
+            p.phone || '',
+            p.diagnosis || '',
+            p.benefitNumber || '',
+            p.benefitTo || '',
+            p.lastRx || '',
+            next ? formatDate(next) : '',
+            status.text,
+            p.address || '',
+            p.comment || '',
+            doctorName,
+            doctorDistrict
+        ]);
+    }
+
+    // Создаём книгу Excel
+    let wsData = [headers, ...rows];
+    let ws = XLSX.utils.aoa_to_sheet(wsData);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Отчет");
+
+    // Скачиваем файл
+    let now = new Date();
+    let dateStr = now.getFullYear() + "-" + (now.getMonth()+1) + "-" + now.getDate();
+    XLSX.writeFile(wb, `отчет_${dateStr}.xlsx`);
+}
+    
+   function importExcel(file) {
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        let data = new Uint8Array(e.target.result);
+        let workbook = XLSX.read(data, { type: 'array' });
+        let sheet = workbook.Sheets[workbook.SheetNames[0]];
+        let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+        if (!rows || rows.length < 2) {
+            alert("Файл пуст или не содержит данных");
+            return;
+        }
+
+        // Нормализация заголовков
+        let rawHeaders = rows[0].map(cell => String(cell || "").trim());
+
+        // Функция точного поиска колонки по приоритетным названиям
+        function findColumn(priorityNames) {
+            for (let name of priorityNames) {
+                let idx = rawHeaders.findIndex(h => h === name);
+                if (idx !== -1) return idx;
+            }
+            return -1;
+        }
+
+        // Определяем колонки с ТОЧНЫМИ названиями
+        let colFio          = findColumn(['ФИО', 'фио', 'ФИО пациента', 'Пациент']);
+        let colBirth        = findColumn(['Дата рождения', 'Дата рожд.', 'ДР']);
+        let colIb           = findColumn(['ИБ', 'Номер ИБ', 'ID']);
+        let colSnils        = findColumn(['СНИЛС', 'Страховой номер']);
+        let colPhone        = findColumn(['Телефон', 'Мобильный', 'Тел']);
+        let colDiagnosis    = findColumn(['Диагноз', 'МКБ']);
+        let colBenefitNumber= findColumn(['№ льготы', 'Номер льготы', 'Льгота']);
+        let colBenefitFrom  = findColumn(['Льгота с', 'С', 'Начало льготы']);
+        let colBenefitTo    = findColumn(['Льгота по', 'По', 'Окончание льготы', 'До']);
+        let colLastRx       = findColumn(['Последняя выписка', 'Дата выписки', 'Выписано']);
+        let colAddress      = findColumn(['Адрес', 'Проживания']);
+        let colComment      = findColumn(['Комментарий', 'Примечание']);
+        let colDoctor       = findColumn(['Врач', 'ФИО врача']);
+
+        if (colFio === -1) {
+            alert("Не найдена колонка 'ФИО' в файле. Убедитесь, что заголовок называется точно 'ФИО'");
+            return;
+        }
+
+        // Преобразование Excel-даты
+        function excelDateToJSDate(excelDate) {
+            return new Date((excelDate - 25569) * 86400000);
+        }
+
+        function formatDateFromAny(val) {
+            if (!val) return "";
+            // Если число (Excel-дата)
+            if (typeof val === 'number' && !isNaN(val)) {
+                let d = excelDateToJSDate(val);
+                if (!isNaN(d.getTime())) {
+                    let day = d.getDate();
+                    let month = d.getMonth() + 1;
+                    let year = d.getFullYear();
+                    return (day < 10 ? '0' + day : day) + '.' + (month < 10 ? '0' + month : month) + '.' + year;
+                }
+            }
+            let str = String(val).trim();
+            let parts = str.split('.');
+            if (parts.length === 3 && parts[2].length === 4) {
+                let d = parseInt(parts[0]);
+                let m = parseInt(parts[1]);
+                let y = parseInt(parts[2]);
+                if (!isNaN(d) && !isNaN(m) && !isNaN(y) && y > 1900)
+                    return (d < 10 ? '0' + d : d) + '.' + (m < 10 ? '0' + m : m) + '.' + y;
+            }
+            return "";
+        }
+
+        let clearBefore = document.getElementById('clearBeforeImport').checked;
+        if (clearBefore) {
+            if (confirm("ВНИМАНИЕ! Очистить всех пациентов перед загрузкой?")) {
+                PATIENTS = [];
+            } else {
+                return;
+            }
+        }
+
+        function normalizeName(n) {
+            if (!n) return "";
+            return n.trim().toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
+        }
+
+        let added = 0, updated = 0;
+
+        for (let i = 1; i < rows.length; i++) {
+            let row = rows[i];
+            if (!row || !row[colFio] || String(row[colFio]).trim() === "") continue;
+
+            let fio = String(row[colFio]).trim();
+            let ib = colIb !== -1 ? String(row[colIb] || "").trim() : "";
+            let doctorName = colDoctor !== -1 ? String(row[colDoctor] || "").trim() : "";
+            
+            let doctor = DOCTORS.find(d => normalizeName(d.name) === normalizeName(doctorName));
+            if (!doctor && doctorName) {
+                let newId = Math.max(...DOCTORS.map(d => d.id), 0) + 1;
+                doctor = { id: newId, name: doctorName, district: "Участок" };
+                DOCTORS.push(doctor);
+            }
+            if (!doctor) continue;
+
+            let benefitNumber = colBenefitNumber !== -1 ? String(row[colBenefitNumber] || "").trim() : "";
+            let benefitFrom   = colBenefitFrom !== -1 ? String(row[colBenefitFrom] || "").trim() : "";
+            let benefitTo     = colBenefitTo   !== -1 ? String(row[colBenefitTo]   || "").trim() : "";
+            let lastRx        = colLastRx      !== -1 ? formatDateFromAny(row[colLastRx]) : "";
+            let birthDate     = colBirth       !== -1 ? formatDateFromAny(row[colBirth]) : "";
+
+            // Защита от путаницы
+            if (benefitNumber && benefitNumber.includes(".") && benefitNumber.length > 5) {
+                benefitNumber = "";
+            }
+
+            let existing = PATIENTS.find(p => p.ib === ib && ib !== "");
+            if (existing) {
+                existing.fio = fio;
+                existing.birthDate = birthDate || existing.birthDate;
+                existing.phone = colPhone !== -1 ? String(row[colPhone] || "").trim() : existing.phone;
+                existing.diagnosis = colDiagnosis !== -1 ? String(row[colDiagnosis] || "").trim() : existing.diagnosis;
+                existing.benefitNumber = benefitNumber || existing.benefitNumber;
+                existing.benefitFrom = benefitFrom || existing.benefitFrom;
+                existing.benefitTo = benefitTo || existing.benefitTo;
+                existing.lastRx = lastRx || existing.lastRx;
+                existing.address = colAddress !== -1 ? String(row[colAddress] || "").trim() : existing.address;
+                existing.comment = colComment !== -1 ? String(row[colComment] || "").trim() : existing.comment;
+                existing.doctorId = doctor.id;
+                updated++;
+            } else {
+                PATIENTS.push({
+                    id: Date.now() + Math.random() + i,
+                    fio: fio,
+                    birthDate: birthDate,
+                    ib: ib,
+                    snils: colSnils !== -1 ? String(row[colSnils] || "").trim() : "",
+                    phone: colPhone !== -1 ? String(row[colPhone] || "").trim() : "",
+                    diagnosis: colDiagnosis !== -1 ? String(row[colDiagnosis] || "").trim() : "",
+                    benefitNumber: benefitNumber,
+                    benefitFrom: benefitFrom,
+                    benefitTo: benefitTo,
+                    lastRx: lastRx,
+                    address: colAddress !== -1 ? String(row[colAddress] || "").trim() : "",
+                    comment: colComment !== -1 ? String(row[colComment] || "").trim() : "",
+                    doctorId: doctor.id
+                });
+                added++;
+            }
+        }
+
+        saveData();
+        renderDoctorSelect();
+        renderDoctorSelectInModal();
+        renderTable();
+        alert(`✅ Импорт завершён: добавлено ${added}, обновлено ${updated}`);
+    };
+    reader.readAsArrayBuffer(file);
+}
+    function importJson(file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                let data = JSON.parse(e.target.result);
+                if (data.doctors && data.patients) {
+                    if (confirm("Загрузить JSON? Это заменит все данные!")) {
+                        DOCTORS = data.doctors; PATIENTS = data.patients; BENEFITS = data.benefits || ['777','775','778'];
+                        saveData(); renderBenefitButtons(); renderDoctorSelect(); renderTable();
+                        document.getElementById('importResult').innerHTML = `<div style="background:#d4edda;padding:10px;">✅ JSON загружен</div>`;
+                    }
+                } else alert("Неверный формат JSON");
+            } catch(err) { alert("Ошибка: "+err.message); }
+        };
+        reader.readAsText(file);
+    }
+    
+    function showDoctorsList() {
+        let html = '<table style="width:100%"><thead><tr><th>ФИО врача</th><th>Участок</th><th></th><th></th></tr></thead><tbody>';
+        DOCTORS.forEach(d => { html += `<tr><td>${d.name}</td><td>${d.district||'—'}</td><td><button onclick="editDoctor(${d.id})">✏️</button></td><td><button onclick="deleteDoctor(${d.id})">🗑️</button></td></tr>`; });
+        html += '</tbody></table>';
+        document.getElementById('doctorsList').innerHTML = html;
+    }
+    
+    window.editDoctor = function(id) {
+        let d = DOCTORS.find(d=>d.id===id);
+        if(!d) return;
+        document.getElementById('editDoctorId').value = d.id;
+        document.getElementById('editDoctorName').value = d.name;
+        document.getElementById('editDoctorDistrict').value = d.district||'';
+	document.getElementById('editDoctorDepartment').value = d.department || 1;
+        document.getElementById('editDoctorModal').style.display = 'flex';
+    };
+    
+    function saveDoctorEdit() {
+        let id = parseInt(document.getElementById('editDoctorId').value);
+        let newName = document.getElementById('editDoctorName').value.trim();
+        let newDistrict = document.getElementById('editDoctorDistrict').value.trim();
+        if(!newName) { alert("Введите ФИО"); return; }
+        let d = DOCTORS.find(d=>d.id===id);
+        if(d) {
+            d.name = newName; d.district = newDistrict;
+	     d.department = parseInt(document.getElementById('editDoctorDepartment').value);
+            saveData(); renderDoctorSelect(); renderDoctorSelectInModal(); showDoctorsList();
+            if(currentDoctor?.id === id) currentDoctor = d;
+            renderTable();
+        }
+        document.getElementById('editDoctorModal').style.display = 'none';
+    }
+    
+    window.deleteDoctor = function(id) {
+        if(confirm("Удалить врача?")) {
+            DOCTORS = DOCTORS.filter(d=>d.id!==id);
+            saveData(); renderDoctorSelect(); renderDoctorSelectInModal(); showDoctorsList();
+            if(currentDoctor?.id === id) { currentDoctor = null; renderTable(); }
+        }
+    };
+    
+    function addDoctor() { document.getElementById('newDoctorName').value=''; document.getElementById('newDoctorDistrict').value=''; document.getElementById('doctorModal').style.display='flex'; }
+    function saveDoctor() {
+        let name = document.getElementById('newDoctorName').value.trim();
+        if(!name) { alert("Введите ФИО"); return; }
+        let district = document.getElementById('newDoctorDistrict').value.trim();
+        let newId = Math.max(...DOCTORS.map(d=>d.id),0)+1;
+	let department = parseInt(document.getElementById('newDoctorDepartment').value);
+DOCTORS.push({ id: newId, name, district: district || "Участок №" + newId, department: department });
+        saveData(); renderDoctorSelect(); renderDoctorSelectInModal(); showDoctorsList();
+        document.getElementById('doctorModal').style.display = 'none';
+    }
+    
+    function createBackup() {
+        let blob = new Blob([JSON.stringify({ doctors: DOCTORS, patients: PATIENTS, benefits: BENEFITS }, null, 2)], {type:'application/json'});
+        let a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    }
+    
+   function showTab(tab) {
+    document.getElementById('adminWork').classList.toggle('hidden', tab !== 'work');
+    document.getElementById('adminPanel').classList.toggle('hidden', tab !== 'admin');
+    if (tab === 'admin') {
+        isAdminMode = true;
+        showDoctorsList();
+        renderBenefitsList();
+        renderDoctorSelectsForReassign(); // ← ВОТ ЭТА ФУНКЦИЯ СУЩЕСТВУЕТ
+    } else {
+        isAdminMode = false;
+    }
+}
+    
+function renderDoctorSelectsForReassign() {
+    let oldSelect = document.getElementById('oldDoctorSelect');
+    let newSelect = document.getElementById('newDoctorSelect');
+    if (!oldSelect) return;
+    oldSelect.innerHTML = '<option value="">-- Текущий врач --</option>';
+    newSelect.innerHTML = '<option value="">-- Новый врач --</option>';
+    DOCTORS.forEach(d => {
+        oldSelect.appendChild(new Option(`${d.name} (${d.district})`, d.id));
+        newSelect.appendChild(new Option(`${d.name} (${d.district})`, d.id));
+    });
+}
+
+function reassignPatients() {
+    let oldId = parseInt(document.getElementById('oldDoctorSelect').value);
+    let newId = parseInt(document.getElementById('newDoctorSelect').value);
+    if (!oldId || !newId) { alert("Выберите обоих врачей"); return; }
+    if (oldId === newId) { alert("Врачи должны быть разными"); return; }
+    let count = 0;
+    for (let p of PATIENTS) {
+        if (p.doctorId === oldId) {
+            p.doctorId = newId;
+            count++;
+        }
+    }
+    saveData();
+    renderTable();
+    alert(`✅ Перепривязано ${count} пациентов`);
+}
+
+document.getElementById('reassignPatientsBtn')?.addEventListener('click', reassignPatients);
+
+
+
+    // ========== ЛЕКАРСТВА ==========
+let currentMedications = []; // временный массив для текущего пациента
+
+function renderMedicationsList() {
+    let container = document.getElementById('medicationsList');
+    if (!container) return;
+    
+
+    // ПРИНУДИТЕЛЬНЫЙ СТИЛЬ ДЛЯ ТЁМНОЙ ТЕМЫ
+    if (document.body.classList.contains('dark-theme')) {
+        container.style.color = '#f7fafc';
+    } else {
+        container.style.color = '';
+    }
+
+    if (currentMedications.length === 0) {
+        container.innerHTML = '<div style="color: #888; font-style: italic;">Нет назначенных лекарств</div>';
+        return;
+    }
+    
+    let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+    for (let i = 0; i < currentMedications.length; i++) {
+        html += `
+            <div style="display: flex; align-items: center; gap: 8px; background: #f5f7fa; padding: 6px 10px; border-radius: 16px;">
+                <span style="flex: 1; cursor: pointer;" class="edit-medication" data-index="${i}">✏️ ${escapeHtml(currentMedications[i])}</span>
+                <button type="button" class="delete-medication-btn" data-index="${i}" style="background: #c62828; color: white; border: none; border-radius: 20px; padding: 2px 10px; cursor: pointer;">🗑️</button>
+            </div>
+        `;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Обработчики удаления
+    document.querySelectorAll('.delete-medication-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            let idx = parseInt(this.getAttribute('data-index'));
+            currentMedications.splice(idx, 1);
+            renderMedicationsList();
+        });
+    });
+    
+    // Обработчики редактирования (клик на текст)
+    document.querySelectorAll('.edit-medication').forEach(span => {
+        span.addEventListener('click', function() {
+            let idx = parseInt(this.getAttribute('data-index'));
+            let oldValue = currentMedications[idx];
+            let newValue = prompt("Редактировать лекарство:", oldValue);
+            if (newValue && newValue.trim() !== "") {
+                currentMedications[idx] = newValue.trim();
+                renderMedicationsList();
+            }
+        });
+    });
+}
+
+function escapeHtml(str) {
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+function addMedication() {
+    let drug = prompt("Введите название лекарства и дозировку:", "");
+    if (drug && drug.trim() !== "") {
+        currentMedications.push(drug.trim());
+        renderMedicationsList();
+    }
+}
+
+document.getElementById('addMedicationBtn')?.addEventListener('click', addMedication);
+
+    function initFilters() {
+        document.querySelectorAll('.dept-filter-btn').forEach(btn => {
+    		btn.addEventListener('click', function() {
+        		document.querySelectorAll('.dept-filter-btn').forEach(b => b.classList.remove('active'));
+        		this.classList.add('active');
+        		currentDepartmentFilter = this.dataset.dept;
+        		currentPage = 1;
+        		renderTable();
+    		});
+	});
+    document.getElementById('searchInput').addEventListener('input', (e) => { searchQuery = e.target.value; currentPage = 1; renderTable(); });
+    }
+    
+    document.getElementById('refreshBtn')?.addEventListener('click', () => { if(confirm("Обновить данные с сервера?")) loadData(); });
+    document.getElementById('exportBtn').addEventListener('click', exportReport);
+    document.getElementById('addPatientBtn').addEventListener('click', addPatient);
+    document.getElementById('saveBtn').addEventListener('click', savePatient);
+    document.getElementById('cancelBtn').addEventListener('click', () => document.getElementById('editModal').style.display = 'none');
+    document.getElementById('importBtn').addEventListener('click', () => { let f = document.getElementById('excelFile').files[0]; if(f) importExcel(f); else alert("Выберите файл"); });
+    document.getElementById('importJsonBtn').addEventListener('click', () => document.getElementById('jsonFile').click());
+    document.getElementById('jsonFile').addEventListener('change', (e) => { if(e.target.files[0]) importJson(e.target.files[0]); e.target.value=''; });
+    document.getElementById('backupBtn').addEventListener('click', createBackup);
+    document.getElementById('addDoctorBtn').addEventListener('click', addDoctor);
+    document.getElementById('saveDoctorBtn').addEventListener('click', saveDoctor);
+    document.getElementById('cancelDoctorBtn').addEventListener('click', () => document.getElementById('doctorModal').style.display='none');
+    document.getElementById('saveDoctorEditBtn')?.addEventListener('click', saveDoctorEdit);
+    document.getElementById('cancelDoctorEditBtn')?.addEventListener('click', () => document.getElementById('editDoctorModal').style.display='none');
+    document.getElementById('addBenefitBtn')?.addEventListener('click', addBenefit);
+    // Назначить обработчик, когда модальное окно открыто
+document.getElementById('setTodayBtn')?.addEventListener('click', setTodayDate);
+    document.getElementById('exportLogsBtn')?.addEventListener('click', exportLogsToExcel);
+    document.getElementById('doctorSelect').addEventListener('change', (e) => {
+        let val = e.target.value;
+        if(val === 'all') { currentDoctorAll = true; currentDoctor = null; localStorage.setItem('selectedDoctor','all'); }
+        else if(!val) { currentDoctorAll = false; currentDoctor = null; localStorage.removeItem('selectedDoctor'); }
+        else { currentDoctor = DOCTORS.find(d=>d.id==parseInt(val)); currentDoctorAll = false; localStorage.setItem('selectedDoctor',val); }
+        currentPage = 1; renderTable();
+    });
+    
+    initFilters();
+    loadData();
+// Переключение тёмной темы
+const themeToggle = document.getElementById('themeToggleBtn');
+if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-theme');
+}
+themeToggle?.addEventListener('click', () => {
+    document.body.classList.toggle('dark-theme');
+    if (document.body.classList.contains('dark-theme')) {
+        localStorage.setItem('theme', 'dark');
+    } else {
+        localStorage.setItem('theme', 'light');
+    }
+});
+
+document.getElementById('reassignPatientsBtn')?.addEventListener('click', reassignPatients);
+</script>
+</body>
+</html>
