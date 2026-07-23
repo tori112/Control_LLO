@@ -57,11 +57,9 @@
 
 ### Скриншоты
 
-| Светлая тема | Тёмная тема |
-|--------------|-------------|
 | <img width="1838" height="880" alt="image" src="https://github.com/user-attachments/assets/1f2b1325-afba-44c3-91a4-c8dea8e66fe3" />
  | <img width="1824" height="891" alt="image" src="https://github.com/user-attachments/assets/03838977-3bf0-44c5-a735-d8838b6b54c7" />
- |
+
 
 ### Автор
 
