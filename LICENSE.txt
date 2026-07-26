@@ -19,3 +19,38 @@
 Для получения разрешения на использование ПО обращайтесь к автору (контакты в профиле GitHub).
 
 Уникальный идентификатор: LLO-2026-04-05-001
+
+PROPRIETARY LICENCE
+
+
+© Belova V.P., 2026. All rights reserved.
+
+
+This software (hereinafter referred to as the ‘Software’) is the intellectual property of the author.
+
+
+THE FOLLOWING IS PROHIBITED:
+
+\- Copying, distributing, modifying or decompiling the Software or any part thereof.
+
+\- Use for commercial purposes without the author’s written permission.
+
+\- Use in other healthcare institutions without the author’s consent.
+
+\- Extracting the code for use in other projects.
+
+
+THE FOLLOWING IS PERMITTED:
+
+\- Viewing the code for familiarisation purposes.
+
+\- Use at GBUZ ‘City Hospital No. 40’ Polyclinic No. 68 (subject to agreement with the author).
+
+
+The author reserves all rights provided for under the legislation of the Russian Federation on the protection of intellectual property.
+
+
+To obtain permission to use the software, please contact the author (contact details in the GitHub profile).
+
+
+Unique identifier: LLO-2026-04-05-001
