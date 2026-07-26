@@ -31,20 +31,20 @@ This software (hereinafter referred to as the ‘Software’) is the intellectua
 
 THE FOLLOWING IS PROHIBITED:
 
-\- Copying, distributing, modifying or decompiling the Software or any part thereof.
+- Copying, distributing, modifying or decompiling the Software or any part thereof.
 
-\- Use for commercial purposes without the author’s written permission.
+- Use for commercial purposes without the author’s written permission.
 
-\- Use in other healthcare institutions without the author’s consent.
+- Use in other healthcare institutions without the author’s consent.
 
-\- Extracting the code for use in other projects.
+- Extracting the code for use in other projects.
 
 
 THE FOLLOWING IS PERMITTED:
 
-\- Viewing the code for familiarisation purposes.
+- Viewing the code for familiarisation purposes.
 
-\- Use at GBUZ ‘City Hospital No. 40’ Polyclinic No. 68 (subject to agreement with the author).
+- Use at GBUZ ‘City Hospital No. 40’ Polyclinic No. 68 (subject to agreement with the author).
 
 
 The author reserves all rights provided for under the legislation of the Russian Federation on the protection of intellectual property.
